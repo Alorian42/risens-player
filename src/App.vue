@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" v-bind:class="{ night: forceNightMode }">
     <loading :active.sync="isLoading" :can-cancel="false" :is-full-page="true"></loading>
     <div class="head">
       <episode-selector class="episodes" :episodes="episodes" :currentEpisodeProp="currentEpisode"></episode-selector>
@@ -92,6 +92,9 @@ export default {
   },
   computed: {
     canToggle: function() {
+      if (this.episodes[this.currentEpisode] === undefined) {
+        return false;
+      }
       if (this.type === "sub") {
         return this.episodes[this.currentEpisode].dubvideoid !== "";
       } else {
@@ -148,6 +151,9 @@ export default {
   methods: {
     changeEpisode: function(episode) {
       this.currentEpisode = episode;
+      if (this.episodes[this.currentEpisode] === undefined) {
+        return;
+      }
 
       if (
         this.type === "sub" &&
@@ -256,6 +262,9 @@ export default {
       }
     },
     statAction: function() {
+      if (this.episodes[this.currentEpisode] === undefined) {
+        return;
+      }
       fetch(
         "https://risens.team/risensteam/api/stat.php?type=3&id=" +
           this.episodes[this.currentEpisode].id
