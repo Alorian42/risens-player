@@ -69,7 +69,6 @@ export default {
 
     this.$on("ChangeEpisode", episode => {
       this.changeEpisode(episode);
-      this.statAction();
     });
 
     window.addEventListener("message", event => {
@@ -166,6 +165,7 @@ export default {
       ) {
         this.type = "sub";
       }
+      this.statAction();
     },
     checkNightMode: function() {
       const n = $cookies.get("night");
@@ -265,8 +265,12 @@ export default {
       if (this.episodes[this.currentEpisode] === undefined) {
         return;
       }
+      let type = 1;
+      if (this.type === 'dub') {
+        type = 2;
+      }
       fetch(
-        "https://risens.team/risensteam/api/stat.php?type=3&id=" +
+        "https://risens.team/risensteam/api/stat.php?type=" + type + "&id=" +
           this.episodes[this.currentEpisode].id
       );
     }
