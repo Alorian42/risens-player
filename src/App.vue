@@ -69,6 +69,7 @@ export default {
 
     this.$on("ChangeEpisode", episode => {
       this.changeEpisode(episode);
+      this.statAction();
     });
 
     window.addEventListener("message", event => {
@@ -189,7 +190,6 @@ export default {
 
           this.changeEpisode(0);
           this.isLoading = false;
-          //this.statAction();
         });
     },
     alertError: function() {
@@ -254,6 +254,12 @@ export default {
       } else {
         this.type = "sub";
       }
+    },
+    statAction: function() {
+      fetch(
+        "https://risens.team/risensteam/api/stat.php?type=3&id=" +
+          this.episodes[this.currentEpisode].id
+      );
     }
   }
 };
