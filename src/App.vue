@@ -102,11 +102,13 @@ export default {
     },
     episodeUrl: function() {
       if (this.episodes[this.currentEpisode] !== undefined) {
+        const curEp = this.episodes[this.currentEpisode];
         return (
           "https://risens.team/risensteam/player.php?type=" +
           this.type +
           "&id=" +
-          this.episodes[this.currentEpisode].id
+          curEp.id +
+          "&time=" + curEp.time + "&token=" + curEp.token
         );
       }
 
