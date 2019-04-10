@@ -1,5 +1,13 @@
 <template>
   <div id="app" v-bind:class="{ night: forceNightMode }">
+    <loading :active.sync="firstSelector" :can-cancel="false" :is-full-page="true">
+      <video v-if="!isVip" v-show="prerollLoaded && !prerollPlayed" autoplay controls :poster="poster" ref="preroll" :src="prerollUrl" class="preroll"></video>
+      <img class="poster" :src="poster" alt="poster">
+      <div v-if="prerollPlayed || isVip" class="button-wrapper">
+        <button class="button-subs" v-show="!isLoading" @click="gotoSubs">Субтитры</button>
+        <button class="button-dubs" v-show="!isLoading" @click="gotoDubs">Озвучка</button>
+      </div>
+    </loading>
     <loading :active.sync="isLoading" :can-cancel="false" :is-full-page="true"></loading>
     <div class="head">
       <episode-selector class="episodes" :episodes="episodes" :currentEpisodeProp="currentEpisode"></episode-selector>
@@ -53,7 +61,14 @@ export default {
       id: false,
       currentEpisode: 0,
       type: "sub",
-      isVip: false
+      isVip: false,
+      firstSelector: true,
+      poster: '',
+      isSr: false,
+      isWaka: false,
+      prerollLoaded: false,
+      prerollPlayed: false,
+      skipSelect: false,
     };
   },
   mounted() {
@@ -88,17 +103,25 @@ export default {
       this.id = query.id;
       this.loadEpisodes(this.id);
     }
+
+    this.$refs.preroll.addEventListener('ended', () => {
+      this.prerollPlayed = true;
+      if (this.skipSelect) {
+        this.firstSelector = false;
+      }
+    });
   },
   computed: {
+    prerollUrl: function() {
+      if (this.isSr) {
+        return 'https://risens.team/risensteam/player/sovetromantica.mp4';
+      }
+      else {
+        return 'https://risens.team/risensteam/player/patron_feb.mp4';
+      }
+    },
     canToggle: function() {
-      if (this.episodes[this.currentEpisode] === undefined) {
-        return false;
-      }
-      if (this.type === "sub") {
-        return this.episodes[this.currentEpisode].dubvideoid !== "";
-      } else {
-        return this.episodes[this.currentEpisode].subvideoid !== "";
-      }
+      return this.isThereTwo(this.currentEpisode);
     },
     episodeUrl: function() {
       if (this.episodes[this.currentEpisode] !== undefined) {
@@ -150,6 +173,28 @@ export default {
     }
   },
   methods: {
+    isThereTwo: function(index) {
+      if (this.episodes[index] === undefined) {
+        return false;
+      }
+      if (this.type === "sub") {
+        return this.episodes[index].dubvideoid !== "";
+      } else {
+        return this.episodes[index].subvideoid !== "";
+      }
+    },
+    gotoSubs: function() {
+      this.type = 'sub';
+      this.finishLoad();
+    },
+    gotoDubs: function() {
+      this.type = 'dub';
+      this.finishLoad();
+    },
+    finishLoad: function() {
+      this.changeEpisode(0);
+      this.firstSelector = false;
+    },
     changeEpisode: function(episode) {
       this.currentEpisode = episode;
       if (this.episodes[this.currentEpisode] === undefined) {
@@ -175,6 +220,8 @@ export default {
     },
     loadEpisodes: function(id) {
       this.isLoading = true;
+      this.prerollLoaded = false;
+      this.prerollPlayed = false;
 
       fetch("https://risens.team/risensteam/api/anime.php?id=" + id)
         .then(function(response) {
@@ -196,7 +243,26 @@ export default {
             }
           });
 
-          this.changeEpisode(0);
+          if (this.episodes[0] !== undefined) {
+            this.poster = this.episodes[0].poster;
+            this.isSr = this.episodes[0].flags.indexOf('sr') !== -1;
+            this.isWaka = this.episodes[0].flags.indexOf('waka') !== -1;
+            this.prerollLoaded = true;
+          }
+          
+          if (this.isVip) {
+            this.prerollPlayed = true;
+          }
+
+          if (!this.isThereTwo(0)) {
+            this.skipSelect = true;
+
+            if (this.isVip) {
+              this.firstSelector = false;
+            }
+
+            this.changeEpisode(0);
+          }
           this.isLoading = false;
         });
     },
@@ -223,7 +289,6 @@ export default {
       });
     },
     downloadEpisode: function() {
-      this.isVip = true;
       if (this.type !== "sub") {
         Swal.fire({
           type: "error",
@@ -363,5 +428,50 @@ body {
 
 .ml-auto {
   margin-left: auto;
+}
+
+.vld-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.poster {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.button-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  background-color: #21252969;
+
+  padding: 50px;
+}
+
+.button-subs, .button-dubs {
+  padding: 10px 15px;
+  border: none;
+  background-color: #e74c3c;
+  color: white;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 15px;
+  margin: 10px;
+}
+
+.button-subs:hover, .button-dubs:hover {
+  background-color: #d93625;
+  transition: .5s;
+}
+
+.preroll {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
 }
 </style>
