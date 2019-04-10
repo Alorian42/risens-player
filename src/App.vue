@@ -1,7 +1,7 @@
 <template>
   <div id="app" v-bind:class="{ night: forceNightMode }">
     <loading :active.sync="firstSelector" :can-cancel="false" :is-full-page="true">
-      <video v-if="!isVip" v-show="prerollLoaded && !prerollPlayed" autoplay controls :poster="poster" ref="preroll" :src="prerollUrl" class="preroll"></video>
+      <video v-if="!isVip" v-show="prerollLoaded && !prerollPlayed" controls :poster="poster" ref="preroll" :src="prerollUrl" class="preroll"></video>
       <img class="poster" :src="poster" alt="poster">
       <div v-if="prerollPlayed || isVip" class="button-wrapper">
         <button class="button-subs" v-show="!isLoading" @click="gotoSubs">Субтитры</button>
@@ -80,6 +80,11 @@ export default {
         if (json.group == 1 || json.group == 6 || json.group == 10) {
           this.isVip = true;
         }
+        const query = this.$route.query;
+        if (query.id !== undefined) {
+          this.id = query.id;
+          this.loadEpisodes(this.id);
+        }
       });
 
     this.$on("ChangeEpisode", episode => {
@@ -97,12 +102,6 @@ export default {
 
     const n = $cookies.get("night");
     this.forceNightMode = n == "yes";
-
-    const query = this.$route.query;
-    if (query.id !== undefined) {
-      this.id = query.id;
-      this.loadEpisodes(this.id);
-    }
 
     this.$refs.preroll.addEventListener('ended', () => {
       this.prerollPlayed = true;
@@ -248,6 +247,9 @@ export default {
             this.isSr = this.episodes[0].flags.indexOf('sr') !== -1;
             this.isWaka = this.episodes[0].flags.indexOf('waka') !== -1;
             this.prerollLoaded = true;
+            if (!this.isVip) {
+              this.$refs.preroll.play();
+            }
           }
           
           if (this.isVip) {
@@ -348,10 +350,7 @@ export default {
 <style lang="scss">
 #app,
 body {
-  padding: 0;
-  margin: 0;
-  width: 100vw;
-  height: 100vh;
+  position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;
 }
 
 .head {
